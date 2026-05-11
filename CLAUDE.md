@@ -42,3 +42,7 @@ cleaners/
 3. 入口先用 `has(...)` 或 `os.path.exists(...)` 探测，缺失就提示并 return。
 4. 若涉及用户数据/配置，函数内必须 `Confirm.ask(..., default=False)`，拒绝时打印跳过提示并 return。
 5. 在 `main.py` 里 import 并加一条 `console.rule("Step NN: <name>")` + 调用，顺序追加在末尾。
+
+## 文档同步
+
+每次实现新功能或修改既有功能后，**必须查看 `README.md` 是否需要同步更新**（清理项列表、使用说明、架构描述等）。需要更新就直接改，不要等用户提醒。
