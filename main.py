@@ -13,8 +13,8 @@ from cleaners.dev import (
     clean_rust,
     clean_sdkman,
 )
-from cleaners.system import clean_dnf, clean_journal
-from cleaners.user import clean_user_dirs
+from cleaners.system import clean_dnf, clean_journal, clean_user_cache, clean_var_cache
+from cleaners.user import clean_trash, clean_user_dirs
 
 # 输出大标题
 console.print(
@@ -51,16 +51,25 @@ clean_rust()
 console.rule("Step 06: SDKMAN")
 clean_sdkman()
 
-console.rule("Step 07: 用户目录")
+console.rule("Step 07: ~/.cache")
+clean_user_cache()
+
+console.rule("Step 08: 用户目录")
 clean_user_dirs()
 
-console.rule("Step 08: Claude")
+console.rule("Step 09: 回收站")
+clean_trash()
+
+console.rule("Step 10: Claude")
 clean_claude()
 
-console.rule("Step 09: dnf")
+console.rule("Step 11: dnf")
 clean_dnf()
 
-console.rule("Step 10: systemd journal")
+console.rule("Step 12: /var/cache")
+clean_var_cache()
+
+console.rule("Step 13: systemd journal")
 clean_journal()
 
 console.rule("[green]全部完成[/green]")
