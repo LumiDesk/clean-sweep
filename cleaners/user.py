@@ -10,7 +10,7 @@ from ._common import console, run
 
 def clean_user_dirs() -> None:
     home = os.path.expanduser("~")
-    targets = ["Desktop", "Documents", "Downloads", "Music", "Pictures", "Videos"]
+    targets = ["Documents", "Downloads", "Music", "Pictures", "Videos"]
     # 这一步删除的是用户数据而非缓存，单独二次确认
     if not Confirm.ask(
         f"将清空 {home} 下的 {', '.join(targets)} 内容（保留文件夹本身），确认继续？",

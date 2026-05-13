@@ -1,4 +1,4 @@
-"""系统级清理：dnf 包缓存 / autoremove、systemd 日志、~/.cache、/var/cache"""
+"""系统级清理：dnf / apt 包缓存 / autoremove、systemd 日志、~/.cache、/var/cache"""
 
 import os
 import shlex
@@ -21,6 +21,21 @@ def clean_dnf() -> None:
         return
     run("sudo dnf autoremove -y")
     run("sudo dnf clean all")
+
+
+def clean_apt() -> None:
+    if not has("apt-get"):
+        skip("apt")
+        return
+    # 涉及 sudo 且 autoremove 会卸载未被依赖的包，二次确认
+    if not Confirm.ask(
+        "将执行 sudo apt-get autoremove / clean（会卸载孤立包并清除包缓存），确认继续？",
+        default=False,
+    ):
+        console.print("[yellow]已跳过 apt 清理[/yellow]")
+        return
+    run("sudo apt-get autoremove -y")
+    run("sudo apt-get clean")
 
 
 def clean_journal() -> None:
