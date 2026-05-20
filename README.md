@@ -24,10 +24,23 @@
 | 12 | `sudo apt-get autoremove` + `sudo apt-get clean` | **系统（需 sudo）** |
 | 13 | 清空 `/var/cache/man`、`/var/cache/fontconfig`、`/var/cache/PackageKit`、`/var/cache/cups` | **系统（需 sudo）** |
 | 14 | `sudo journalctl --vacuum-time=7d` 清理 systemd 日志 | **系统（需 sudo）** |
+| 15 | 读项目根目录 `custom.json` 中 `paths` 列表，删除指定路径（**包括路径本身**） | **用户自定义** |
 
 - 缺失的工具会自动跳过（比如没装 Docker 就跳 Step 01）。
-- Step 08、09、10、11、12、13、14 删的不是缓存（或涉及系统级改动），每步都有**单独的二次确认**，默认 No。
+- Step 08、09、10、11、12、13、14、15 删的不是缓存（或涉及系统级改动），每步都有**单独的二次确认**，默认 No。
 - Step 11、12、13、14 需要 `sudo`，会按需弹出密码提示；Step 11 仅 Fedora/RHEL 系有效，Step 12 仅 Debian/Ubuntu 系有效，其他发行版会跳过。`/var/cache` 下没列出的子目录不会被动到。
+- Step 15 没有配置文件时直接跳过。配置示例：
+
+  ```json
+  {
+    "paths": [
+      "~/某个临时目录",
+      "/tmp/foo"
+    ]
+  }
+  ```
+
+  支持 `~` 展开；不存在的路径会逐条提示并跳过；确认后会用 `rm -rf` 删除（**路径本身一并删掉**，与 Step 08 只清空内容不同）。
 
 ## 使用
 
@@ -38,7 +51,7 @@ uv sync
 uv run main.py
 ```
 
-启动时会有一次总确认；遇到 Step 07 / 08 还会再问一遍——想跳过就在那两步回车（默认 No）即可。
+启动时会有一次总确认；后续涉及用户数据 / 系统级 / 自定义的步骤会再单独询问一次——想跳过就在那几步回车（默认 No）即可。
 
 ## 不会做什么
 

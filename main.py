@@ -5,6 +5,7 @@ from rich.prompt import Confirm
 
 from cleaners._common import console
 from cleaners.apps import clean_claude
+from cleaners.custom import clean_custom
 from cleaners.dev import (
     clean_docker,
     clean_go,
@@ -80,5 +81,8 @@ clean_var_cache()
 
 console.rule("Step 14: systemd journal")
 clean_journal()
+
+console.rule("Step 15: 自定义清理")
+clean_custom()
 
 console.rule("[green]全部完成[/green]")

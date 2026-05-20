@@ -97,3 +97,6 @@ desktop.ini
 logs/
 tmp/
 .tmp/
+
+# ---- cleansh 自定义清理列表（本地用，含私人路径） ----
+custom.json
