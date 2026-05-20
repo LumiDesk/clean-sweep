@@ -44,12 +44,12 @@ def clean_journal() -> None:
         return
     # 删除的是系统日志，影响后续问题排查，二次确认
     if not Confirm.ask(
-        "将清理 systemd 日志，仅保留最近 7 天（sudo journalctl --vacuum-time=7d），确认继续？",
+        "将清理 systemd 日志，仅保留最近 7 天（sudo journalctl --vacuum-time=1d），确认继续？",
         default=False,
     ):
         console.print("[yellow]已跳过 journal 清理[/yellow]")
         return
-    run("sudo journalctl --vacuum-time=7d")
+    run("sudo journalctl --vacuum-time=1d")
 
 
 def clean_user_cache() -> None:
