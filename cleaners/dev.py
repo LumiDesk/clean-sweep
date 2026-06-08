@@ -22,6 +22,8 @@ def _docker_cmds() -> list[str]:
         "docker volume ls -q | xargs -r docker volume rm -f",
         # 一次性清理系统中残余的镜像、容器、网络、构建缓存、volume
         "docker system prune -a --volumes -f",
+        # system prune 只清当前 builder；buildx 独立 builder 的构建缓存要单独清
+        "docker buildx prune -a -f",
     ]
 
 
@@ -40,6 +42,15 @@ def _npm_cmds() -> list[str]:
     return [
         "npm cache clean --force",
         "rm -rf ~/.npm/_cacache",
+    ]
+
+
+def _bun_cmds() -> list[str]:
+    return [
+        # 清理全局模块缓存
+        "bun pm cache rm",
+        # 兜底：直接删除默认缓存目录
+        "rm -rf ~/.bun/install/cache",
     ]
 
 
@@ -82,6 +93,14 @@ def clean_npm() -> None:
         skip("npm")
         return
     for cmd in _npm_cmds():
+        run(cmd)
+
+
+def clean_bun() -> None:
+    if not has("bun"):
+        skip("bun")
+        return
+    for cmd in _bun_cmds():
         run(cmd)
 
 

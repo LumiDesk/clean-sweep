@@ -64,6 +64,8 @@ TASKS: list[Task] = [
          detail="pnpm store"),
     Task("npm", "npm", "dev", lambda: has("npm"), dev._npm_cmds,
          detail="npm cache"),
+    Task("bun", "Bun", "dev", lambda: has("bun"), dev._bun_cmds,
+         detail="bun 全局模块缓存（~/.bun/install/cache）"),
     Task("go", "Go", "dev", lambda: has("go"), dev._go_cmds,
          detail="build / module / test / fuzz 缓存"),
     Task("rust", "Rust", "dev", lambda: has("cargo"), dev._rust_cmds,

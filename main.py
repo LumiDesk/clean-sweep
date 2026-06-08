@@ -7,6 +7,7 @@ from cleaners._common import console
 from cleaners.apps import clean_claude
 from cleaners.custom import clean_custom
 from cleaners.dev import (
+    clean_bun,
     clean_docker,
     clean_go,
     clean_npm,
@@ -50,40 +51,43 @@ clean_pnpm()
 console.rule("Step 03: npm")
 clean_npm()
 
-console.rule("Step 04: Go")
+console.rule("Step 04: Bun")
+clean_bun()
+
+console.rule("Step 05: Go")
 clean_go()
 
-console.rule("Step 05: Rust")
+console.rule("Step 06: Rust")
 clean_rust()
 
-console.rule("Step 06: SDKMAN")
+console.rule("Step 07: SDKMAN")
 clean_sdkman()
 
-console.rule("Step 07: ~/.cache")
+console.rule("Step 08: ~/.cache")
 clean_user_cache()
 
-console.rule("Step 08: 用户目录")
+console.rule("Step 09: 用户目录")
 clean_user_dirs()
 
-console.rule("Step 09: 回收站")
+console.rule("Step 10: 回收站")
 clean_trash()
 
-console.rule("Step 10: Claude")
+console.rule("Step 11: Claude")
 clean_claude()
 
-console.rule("Step 11: dnf")
+console.rule("Step 12: dnf")
 clean_dnf()
 
-console.rule("Step 12: apt")
+console.rule("Step 13: apt")
 clean_apt()
 
-console.rule("Step 13: /var/cache")
+console.rule("Step 14: /var/cache")
 clean_var_cache()
 
-console.rule("Step 14: systemd journal")
+console.rule("Step 15: systemd journal")
 clean_journal()
 
-console.rule("Step 15: 自定义清理")
+console.rule("Step 16: 自定义清理")
 clean_custom()
 
 console.rule("[green]全部完成[/green]")
