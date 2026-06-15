@@ -1,7 +1,7 @@
 """开发工具缓存清理：docker / pnpm / npm / go / rust / sdkman
 
-每个清理项的命令规格抽成 `_*_cmds()`，由 CLI 的 `clean_*()` 与 GUI（经
-`registry.py`）共用；命令一律不带 `sudo`，是否提权由执行层决定。
+每个清理项的命令规格抽成 `_*_cmds()`，由对应的 `clean_*()` 调用；命令一律
+不带 `sudo`（开发缓存都不需要提权）。
 """
 
 import os

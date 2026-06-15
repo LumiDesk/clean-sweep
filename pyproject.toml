@@ -1,10 +1,9 @@
 [project]
 name = "clean-sweep"
 version = "0.1.0"
-description = "一键清空各类开发缓存及部分用户目录、应用配置的 Linux 小工具（CLI + GUI）"
+description = "一键清空各类开发缓存及部分用户目录、应用配置的 Linux 命令行小工具"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "pyside6>=6.11.1",
     "rich>=15.0.0",
 ]

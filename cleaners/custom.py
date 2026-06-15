@@ -39,7 +39,7 @@ def _load_paths() -> list[str] | None:
 
 
 def custom_existing() -> list[str]:
-    """custom.json 中当前真实存在、且非危险的路径列表（GUI 据此判断是否可勾选）。"""
+    """custom.json 中当前真实存在、且非危险的路径列表。"""
     expanded = _load_paths()
     if not expanded:
         return []

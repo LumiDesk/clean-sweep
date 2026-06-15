@@ -42,52 +42,29 @@ console.print(
 if not Confirm.ask("确认要删除所有的开发缓存吗？此操作无法撤销？", default=True):
     sys.exit(0)
 
-console.rule("Step 01: Docker")
-clean_docker()
+# 清理步骤按顺序执行；序号由位置自动生成，新增/调整顺序只动这张表。
+# 涉及用户数据 / 系统状态的步骤各自在函数内部再做二次确认。
+STEPS = [
+    ("Docker", clean_docker),
+    ("pnpm", clean_pnpm),
+    ("npm", clean_npm),
+    ("Bun", clean_bun),
+    ("Go", clean_go),
+    ("Rust", clean_rust),
+    ("SDKMAN", clean_sdkman),
+    ("~/.cache", clean_user_cache),
+    ("用户目录", clean_user_dirs),
+    ("回收站", clean_trash),
+    ("Claude", clean_claude),
+    ("dnf", clean_dnf),
+    ("apt", clean_apt),
+    ("/var/cache", clean_var_cache),
+    ("systemd journal", clean_journal),
+    ("自定义清理", clean_custom),
+]
 
-console.rule("Step 02: pnpm")
-clean_pnpm()
-
-console.rule("Step 03: npm")
-clean_npm()
-
-console.rule("Step 04: Bun")
-clean_bun()
-
-console.rule("Step 05: Go")
-clean_go()
-
-console.rule("Step 06: Rust")
-clean_rust()
-
-console.rule("Step 07: SDKMAN")
-clean_sdkman()
-
-console.rule("Step 08: ~/.cache")
-clean_user_cache()
-
-console.rule("Step 09: 用户目录")
-clean_user_dirs()
-
-console.rule("Step 10: 回收站")
-clean_trash()
-
-console.rule("Step 11: Claude")
-clean_claude()
-
-console.rule("Step 12: dnf")
-clean_dnf()
-
-console.rule("Step 13: apt")
-clean_apt()
-
-console.rule("Step 14: /var/cache")
-clean_var_cache()
-
-console.rule("Step 15: systemd journal")
-clean_journal()
-
-console.rule("Step 16: 自定义清理")
-clean_custom()
+for index, (name, clean) in enumerate(STEPS, start=1):
+    console.rule(f"Step {index:02d}: {name}")
+    clean()
 
 console.rule("[green]全部完成[/green]")

@@ -1,7 +1,7 @@
 """系统级清理：dnf / apt 包缓存 / autoremove、systemd 日志、~/.cache、/var/cache
 
-`_*_cmds()` 给出不带 `sudo` 的命令规格；CLI 在 `clean_*()` 里加 `sudo`，
-GUI 经执行层用 `pkexec` 提权。需要提权的项另带二次确认（CLI）/勾选即确认（GUI）。
+`_*_cmds()` 给出不带 `sudo` 的命令规格；`clean_*()` 里按需拼上 `sudo`。
+需要提权或删系统状态的项另带一层二次确认。
 """
 
 import os
