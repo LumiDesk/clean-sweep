@@ -8,11 +8,11 @@ from .spec import Step
 
 # 显示与执行顺序。开发缓存 → 用户缓存 → 用户数据 → 应用配置 → 系统 → 自定义。
 ORDER = [
-    "docker", "pnpm", "npm", "bun", "go", "rust", "sdkman",
-    "user_cache",
+    "docker", "pnpm", "npm", "bun", "go", "rust", "sdkman", "gradle", "maven",
+    "user_cache", "thumbnails",
     "user_dirs", "trash", "logs",
     "claude",
-    "dnf", "apt", "var_cache", "journal",
+    "dnf", "apt", "var_cache", "journal", "crash", "snap", "flatpak",
     "custom",
 ]
 

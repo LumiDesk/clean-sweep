@@ -5,11 +5,17 @@
 """
 
 import os
+import shlex
 
 from ._common import has
 from .spec import Category, Step
 
-_SDKMAN_INIT = os.path.expanduser("~/.sdkman/bin/sdkman-init.sh")
+# 这些目录都允许用环境变量覆盖默认位置，硬编码 ~/... 会在覆盖时清不到。
+_CARGO_HOME = os.environ.get("CARGO_HOME") or os.path.expanduser("~/.cargo")
+_SDKMAN_DIR = os.environ.get("SDKMAN_DIR") or os.path.expanduser("~/.sdkman")
+_SDKMAN_INIT = os.path.join(_SDKMAN_DIR, "bin/sdkman-init.sh")
+_GRADLE_HOME = os.environ.get("GRADLE_USER_HOME") or os.path.expanduser("~/.gradle")
+_MAVEN_HOME = os.path.expanduser("~/.m2")
 
 
 def _docker_cmds() -> list[str]:
@@ -42,7 +48,8 @@ def _pnpm_cmds() -> list[str]:
 def _npm_cmds() -> list[str]:
     return [
         "npm cache clean --force",
-        "rm -rf ~/.npm/_cacache",
+        # _cacache 外再清调试日志与 npx 缓存
+        "rm -rf ~/.npm/_cacache ~/.npm/_logs ~/.npm/_npx",
     ]
 
 
@@ -61,16 +68,32 @@ def _go_cmds() -> list[str]:
 
 
 def _rust_cmds() -> list[str]:
-    # 删除 registry 与 git 缓存，保留已安装的 bin
+    # 删除 registry（含 index）与 git 缓存，保留已安装的 bin
+    home = shlex.quote(_CARGO_HOME)
     return [
-        "rm -rf ~/.cargo/registry/cache ~/.cargo/registry/src "
-        "~/.cargo/git/db ~/.cargo/git/checkouts"
+        f"rm -rf {home}/registry/cache {home}/registry/src {home}/registry/index "
+        f"{home}/git/db {home}/git/checkouts"
     ]
 
 
 def _sdkman_cmds() -> list[str]:
-    # sdk 是 shell 函数，必须先 source
-    return [f"bash -lc 'source {_SDKMAN_INIT} && sdk flush'"]
+    # sdk 是 shell 函数，必须先 source；sdk flush 只清 tmp+metadata，
+    # 占空间大头的下载归档 archives/ 要单独删（不影响已安装版本）
+    sdk = shlex.quote(_SDKMAN_DIR)
+    return [
+        f"bash -lc 'source {shlex.quote(_SDKMAN_INIT)} && sdk flush'",
+        f"rm -rf {sdk}/archives/* {sdk}/tmp/*",
+    ]
+
+
+def _gradle_cmds() -> list[str]:
+    # 只删 caches，保留 wrapper 下载的 distributions / 已装的工具
+    return [f"rm -rf {shlex.quote(_GRADLE_HOME)}/caches"]
+
+
+def _maven_cmds() -> list[str]:
+    # 本地仓库 repository（删后下次构建重新下载）
+    return [f"rm -rf {shlex.quote(_MAVEN_HOME)}/repository"]
 
 
 def steps() -> list[Step]:
@@ -106,6 +129,16 @@ def steps() -> list[Step]:
         Step(
             "sdkman", "SDKMAN", Category.CACHE, _sdkman_cmds(),
             available=os.path.exists(_SDKMAN_INIT), reason="未安装 sdkman",
-            note="sdk flush",
+            note="sdk flush + 下载归档",
+        ),
+        Step(
+            "gradle", "Gradle", Category.CACHE, _gradle_cmds(),
+            available=os.path.isdir(_GRADLE_HOME), reason="无 ~/.gradle",
+            note="caches 目录",
+        ),
+        Step(
+            "maven", "Maven", Category.CACHE, _maven_cmds(),
+            available=os.path.isdir(_MAVEN_HOME), reason="无 ~/.m2",
+            note="本地仓库 ~/.m2/repository",
         ),
     ]

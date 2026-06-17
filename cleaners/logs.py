@@ -13,8 +13,14 @@ HOME = os.path.expanduser("~")
 
 
 def _log_cmds() -> list[str]:
-    # 递归删除家目录下所有 .log 常规文件；find 默认不跟随符号链接
-    return [f"find {shlex.quote(HOME)} -type f -name '*.log' -delete"]
+    # 递归删除家目录下所有 .log 常规文件，但跳过 node_modules / .git
+    # （避免误删项目源码与依赖里的日志）。find 默认不跟随符号链接。
+    # 不用 -delete：它会启用 -depth，使 -prune 失效；改用 prune + xargs rm。
+    home = shlex.quote(HOME)
+    return [
+        f"find {home} -type d \\( -name node_modules -o -name .git \\) -prune "
+        f"-o -type f -name '*.log' -print0 | xargs -0 -r rm -f --"
+    ]
 
 
 def steps() -> list[Step]:
@@ -22,6 +28,6 @@ def steps() -> list[Step]:
     return [
         Step(
             "logs", "日志文件", Category.USER_DATA, _log_cmds(),
-            note=f"递归删除 {HOME} 下所有 .log 文件",
+            note=f"递归删 {HOME} 下所有 .log（跳过 node_modules / .git）",
         ),
     ]

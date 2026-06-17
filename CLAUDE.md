@@ -25,9 +25,9 @@ cleaners/
 ├── _common.py       # 共享 console / run / has
 ├── spec.py          # Category 枚举 + Step 数据类（清理项的统一描述模型）
 ├── registry.py      # 汇总各模块 steps()，按 ORDER 固定顺序返回
-├── dev.py           # 开发工具缓存：docker, pnpm, npm, bun, go, rust, sdkman
-├── system.py        # 系统级：dnf, apt, systemd journal, ~/.cache, /var/cache
-├── user.py          # 用户数据目录：Documents/Downloads/Music/Pictures/Videos + 回收站
+├── dev.py           # 开发工具缓存：docker, pnpm, npm, bun, go, rust, sdkman, gradle, maven
+├── system.py        # 系统级：dnf, apt, journal, ~/.cache, /var/cache, 缩略图, 崩溃报告, snap, flatpak
+├── user.py          # 用户数据目录：Documents/.../Videos + 回收站（含外部盘 .Trash-<uid>）
 ├── logs.py          # 家目录下所有 .log 日志文件
 ├── apps.py          # 应用配置：Claude (.claude 文件夹 + .claude.json)
 └── custom.py        # 自定义：读项目根目录 custom.json 的 paths 列表
