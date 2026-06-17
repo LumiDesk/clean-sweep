@@ -4,9 +4,7 @@ import json
 import os
 import shlex
 
-from rich.prompt import Confirm
-
-from ._common import console, run
+from .spec import Category, Step
 
 # 项目根目录下的 custom.json（与 main.py 同级）
 CONFIG_PATH = os.path.join(
@@ -50,43 +48,25 @@ def _custom_cmds() -> list[str]:
     return [f"rm -rf {shlex.quote(p)}" for p in custom_existing()]
 
 
-def clean_custom() -> None:
+def _reason() -> str:
+    """不可用时给出原因（供 TUI 置灰显示）。"""
     if not os.path.isfile(CONFIG_PATH):
-        console.print(f"[yellow]未找到自定义配置 {CONFIG_PATH}，跳过[/yellow]")
-        console.print(
-            '[dim]提示：创建该文件，内容形如 {"paths": ["/some/dir", "~/another"]}[/dim]'
-        )
-        return
+        return "未找到 custom.json"
+    if _load_paths() is None:
+        return "custom.json 读取失败或格式不正确"
+    return "无可删除的路径（未配置 / 不存在 / 危险路径已挡）"
 
-    expanded = _load_paths()
-    if expanded is None:
-        console.print(f"[red]读取 {CONFIG_PATH} 失败或格式不正确[/red]")
-        return
-    if not expanded:
-        console.print(f"[yellow]{CONFIG_PATH} 中未配置 paths，跳过[/yellow]")
-        return
 
-    dangerous = [p for p in expanded if _is_dangerous(p)]
-    missing = [p for p in expanded if not _is_dangerous(p) and not os.path.exists(p)]
-    existing = [p for p in expanded if not _is_dangerous(p) and os.path.exists(p)]
-
-    for p in dangerous:
-        console.print(f"[red]拒绝删除危险路径 {p}（根目录或家目录本身），跳过[/red]")
-    for p in missing:
-        console.print(f"[yellow]未找到 {p}，跳过[/yellow]")
-
-    if not existing:
-        console.print("[yellow]自定义列表中没有任何可删除的路径，跳过[/yellow]")
-        return
-
-    console.print("将删除以下自定义路径（包括其本身）：")
-    for p in existing:
-        console.print(f"  [red]- {p}[/red]")
-
-    # 用户自定义的删除清单，二次确认
-    if not Confirm.ask("确认全部删除？", default=False):
-        console.print("[yellow]已跳过自定义清理[/yellow]")
-        return
-
-    for cmd in _custom_cmds():
-        run(cmd)
+def steps() -> list[Step]:
+    # custom_existing() 已排除根目录/家目录等危险路径与不存在的路径，
+    # cmds 即预览，所见即所删（包括路径本身）。
+    existing = custom_existing()
+    return [
+        Step(
+            "custom", "自定义清理", Category.CUSTOM, _custom_cmds(),
+            available=bool(existing), reason=_reason(),
+            note=f"删除 custom.json 中 {len(existing)} 个路径（含其本身）"
+            if existing
+            else "读 custom.json 的 paths 列表",
+        ),
+    ]

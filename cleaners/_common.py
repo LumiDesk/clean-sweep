@@ -17,7 +17,3 @@ def run(cmd: str) -> None:
 
 def has(name: str) -> bool:
     return shutil.which(name) is not None
-
-
-def skip(tool: str) -> None:
-    console.print(f"[yellow]未检测到 {tool}，跳过[/yellow]")

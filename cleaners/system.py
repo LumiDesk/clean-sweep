@@ -1,15 +1,14 @@
 """系统级清理：dnf / apt 包缓存 / autoremove、systemd 日志、~/.cache、/var/cache
 
-`_*_cmds()` 给出不带 `sudo` 的命令规格；`clean_*()` 里按需拼上 `sudo`。
-需要提权或删系统状态的项另带一层二次确认。
+`_*_cmds()` 给出不带 `sudo` 的命令规格；`steps()` 里给需要提权的项拼上 `sudo`
+再包装成 `Step`。除 `~/.cache`（缓存性质）外都标为 SYSTEM，TUI 里默认不勾选。
 """
 
 import os
 import shlex
 
-from rich.prompt import Confirm
-
-from ._common import console, has, run, skip
+from ._common import has
+from .spec import Category, Step
 
 CACHE_DIR = os.path.expanduser("~/.cache")
 
@@ -51,72 +50,37 @@ def _var_cache_cmds() -> list[str]:
     ]
 
 
-def clean_dnf() -> None:
-    if not has("dnf"):
-        skip("dnf")
-        return
-    # 涉及 sudo 且 autoremove 会卸载未被依赖的包，二次确认
-    if not Confirm.ask(
-        "将执行 sudo dnf autoremove / clean all（会卸载孤立包并清除包缓存），确认继续？",
-        default=False,
-    ):
-        console.print("[yellow]已跳过 dnf 清理[/yellow]")
-        return
-    for cmd in _dnf_cmds():
-        run(f"sudo {cmd}")
-
-
-def clean_apt() -> None:
-    if not has("apt-get"):
-        skip("apt")
-        return
-    # 涉及 sudo 且 autoremove 会卸载未被依赖的包，二次确认
-    if not Confirm.ask(
-        "将执行 sudo apt-get autoremove / clean（会卸载孤立包并清除包缓存），确认继续？",
-        default=False,
-    ):
-        console.print("[yellow]已跳过 apt 清理[/yellow]")
-        return
-    for cmd in _apt_cmds():
-        run(f"sudo {cmd}")
-
-
-def clean_journal() -> None:
-    if not has("journalctl"):
-        skip("journalctl")
-        return
-    # 删除的是系统日志，影响后续问题排查，二次确认
-    if not Confirm.ask(
-        "将清空全部 systemd 日志（不保留任何历史），确认继续？",
-        default=False,
-    ):
-        console.print("[yellow]已跳过 journal 清理[/yellow]")
-        return
-    for cmd in _journal_cmds():
-        run(f"sudo {cmd}")
-
-
-def clean_user_cache() -> None:
-    if not os.path.isdir(CACHE_DIR):
-        skip("~/.cache")
-        return
-    # XDG 用户缓存（浏览器 / IDE / 缩略图等），删完应用会按需重建。
-    # 性质上是缓存，跟 dev.py 同等级，不加二次确认。
-    for cmd in _user_cache_cmds():
-        run(cmd)
-
-
-def clean_var_cache() -> None:
-    existing = var_cache_existing()
-    if not existing:
-        console.print("[yellow]未发现 /var/cache 下可清理项，跳过[/yellow]")
-        return
-    # 涉及 sudo，二次确认
-    if not Confirm.ask(
-        f"将清空 {', '.join(existing)} 下的内容（sudo），确认继续？",
-        default=False,
-    ):
-        console.print("[yellow]已跳过 /var/cache 清理[/yellow]")
-        return
-    for cmd in _var_cache_cmds():
-        run(f"sudo {cmd}")
+def steps() -> list[Step]:
+    existing_var = var_cache_existing()
+    return [
+        # ~/.cache 性质是缓存，跟 dev.py 同级：默认勾选、无危险标记。
+        Step(
+            "user_cache", "~/.cache", Category.CACHE, _user_cache_cmds(),
+            available=os.path.isdir(CACHE_DIR), reason="目录不存在",
+            note="XDG 用户缓存（浏览器 / IDE / 缩略图等）",
+        ),
+        Step(
+            "dnf", "dnf", Category.SYSTEM,
+            [f"sudo {c}" for c in _dnf_cmds()],
+            available=has("dnf"), reason="非 Fedora/RHEL 系", needs_sudo=True,
+            note="autoremove 孤立包 + clean all",
+        ),
+        Step(
+            "apt", "apt", Category.SYSTEM,
+            [f"sudo {c}" for c in _apt_cmds()],
+            available=has("apt-get"), reason="非 Debian/Ubuntu 系", needs_sudo=True,
+            note="autoremove 孤立包 + clean",
+        ),
+        Step(
+            "var_cache", "/var/cache", Category.SYSTEM,
+            [f"sudo {c}" for c in _var_cache_cmds()],
+            available=bool(existing_var), reason="无可清理子目录", needs_sudo=True,
+            note=", ".join(existing_var) if existing_var else "man/fontconfig/...",
+        ),
+        Step(
+            "journal", "systemd journal", Category.SYSTEM,
+            [f"sudo {c}" for c in _journal_cmds()],
+            available=has("journalctl"), reason="无 journalctl", needs_sudo=True,
+            note="清空全部日志，不保留历史",
+        ),
+    ]

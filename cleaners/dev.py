@@ -1,12 +1,13 @@
-"""开发工具缓存清理：docker / pnpm / npm / go / rust / sdkman
+"""开发工具缓存清理：docker / pnpm / npm / bun / go / rust / sdkman
 
-每个清理项的命令规格抽成 `_*_cmds()`，由对应的 `clean_*()` 调用；命令一律
-不带 `sudo`（开发缓存都不需要提权）。
+每个清理项的命令规格抽成 `_*_cmds()`；命令一律不带 `sudo`（开发缓存都不需要
+提权）。`steps()` 把这些命令包装成 `Step` 供 TUI 与入口使用。
 """
 
 import os
 
-from ._common import has, run, skip
+from ._common import has
+from .spec import Category, Step
 
 _SDKMAN_INIT = os.path.expanduser("~/.sdkman/bin/sdkman-init.sh")
 
@@ -72,57 +73,39 @@ def _sdkman_cmds() -> list[str]:
     return [f"bash -lc 'source {_SDKMAN_INIT} && sdk flush'"]
 
 
-def clean_docker() -> None:
-    if not has("docker"):
-        skip("docker")
-        return
-    for cmd in _docker_cmds():
-        run(cmd)
-
-
-def clean_pnpm() -> None:
-    if not has("pnpm"):
-        skip("pnpm")
-        return
-    for cmd in _pnpm_cmds():
-        run(cmd)
-
-
-def clean_npm() -> None:
-    if not has("npm"):
-        skip("npm")
-        return
-    for cmd in _npm_cmds():
-        run(cmd)
-
-
-def clean_bun() -> None:
-    if not has("bun"):
-        skip("bun")
-        return
-    for cmd in _bun_cmds():
-        run(cmd)
-
-
-def clean_go() -> None:
-    if not has("go"):
-        skip("go")
-        return
-    for cmd in _go_cmds():
-        run(cmd)
-
-
-def clean_rust() -> None:
-    if not has("cargo"):
-        skip("cargo")
-        return
-    for cmd in _rust_cmds():
-        run(cmd)
-
-
-def clean_sdkman() -> None:
-    if not os.path.exists(_SDKMAN_INIT):
-        skip("sdkman")
-        return
-    for cmd in _sdkman_cmds():
-        run(cmd)
+def steps() -> list[Step]:
+    # 全部是缓存：最坏只是下次构建变慢，默认勾选、无危险标记。
+    return [
+        Step(
+            "docker", "Docker", Category.CACHE, _docker_cmds(),
+            available=has("docker"), reason="未安装 docker",
+            note="容器 / 镜像 / volume / 构建缓存",
+        ),
+        Step(
+            "pnpm", "pnpm", Category.CACHE, _pnpm_cmds(),
+            available=has("pnpm"), reason="未安装 pnpm", note="store 缓存",
+        ),
+        Step(
+            "npm", "npm", Category.CACHE, _npm_cmds(),
+            available=has("npm"), reason="未安装 npm", note="cache 目录",
+        ),
+        Step(
+            "bun", "Bun", Category.CACHE, _bun_cmds(),
+            available=has("bun"), reason="未安装 bun", note="全局模块缓存",
+        ),
+        Step(
+            "go", "Go", Category.CACHE, _go_cmds(),
+            available=has("go"), reason="未安装 go",
+            note="build / module / test / fuzz 缓存",
+        ),
+        Step(
+            "rust", "Rust", Category.CACHE, _rust_cmds(),
+            available=has("cargo"), reason="未安装 cargo",
+            note="registry 与 git 缓存（保留 bin）",
+        ),
+        Step(
+            "sdkman", "SDKMAN", Category.CACHE, _sdkman_cmds(),
+            available=os.path.exists(_SDKMAN_INIT), reason="未安装 sdkman",
+            note="sdk flush",
+        ),
+    ]

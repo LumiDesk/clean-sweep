@@ -3,9 +3,7 @@
 import os
 import shlex
 
-from rich.prompt import Confirm
-
-from ._common import console, run
+from .spec import Category, Step
 
 HOME = os.path.expanduser("~")
 CLAUDE_TARGETS = [
@@ -22,17 +20,12 @@ def _claude_cmds() -> list[str]:
     return [f"rm -rf {shlex.quote(path)}" for path in claude_existing()]
 
 
-def clean_claude() -> None:
+def steps() -> list[Step]:
     existing = claude_existing()
-    if not existing:
-        console.print("[yellow]未找到 Claude 相关文件，跳过[/yellow]")
-        return
-    # Claude 的配置 / 历史 / 项目记录都在 .claude 里，单独二次确认
-    if not Confirm.ask(
-        f"将删除：{', '.join(existing)}，确认继续？",
-        default=False,
-    ):
-        console.print("[yellow]已跳过 Claude 清理[/yellow]")
-        return
-    for cmd in _claude_cmds():
-        run(cmd)
+    return [
+        Step(
+            "claude", "Claude", Category.CONFIG, _claude_cmds(),
+            available=bool(existing), reason="未找到 Claude 相关文件",
+            note="删除 ~/.claude 与 ~/.claude.json（配置/历史/项目记录）",
+        ),
+    ]

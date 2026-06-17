@@ -1,15 +1,13 @@
 """用户数据清理：常见家目录子目录 + 回收站
 
-命令规格抽成 `_*_cmds()`，按当前实际存在的目录动态生成。
-删的是用户数据而非缓存，每步在函数内单独二次确认。
+命令规格抽成 `_*_cmds()`，按当前实际存在的目录动态生成。删的是用户数据而非
+缓存，`steps()` 里标为 USER_DATA：TUI 里带 ⚠、默认不勾选。
 """
 
 import os
 import shlex
 
-from rich.prompt import Confirm
-
-from ._common import console, run
+from .spec import Category, Step
 
 HOME = os.path.expanduser("~")
 USER_DIR_NAMES = ["Documents", "Downloads", "Music", "Pictures", "Videos"]
@@ -36,29 +34,17 @@ def _trash_cmds() -> list[str]:
     return [f"find {shlex.quote(TRASH_DIR)} -mindepth 2 -delete"]
 
 
-def clean_user_dirs() -> None:
-    targets = USER_DIR_NAMES
-    # 这一步删除的是用户数据而非缓存，单独二次确认
-    if not Confirm.ask(
-        f"将清空 {HOME} 下的 {', '.join(targets)} 内容（保留文件夹本身），确认继续？",
-        default=False,
-    ):
-        console.print("[yellow]已跳过用户目录清理[/yellow]")
-        return
-    for cmd in _user_dirs_cmds():
-        run(cmd)
-
-
-def clean_trash() -> None:
-    if not os.path.isdir(TRASH_DIR):
-        console.print("[yellow]未找到回收站，跳过[/yellow]")
-        return
-    # 回收站内容属于用户数据（即使已经准备删除），二次确认
-    if not Confirm.ask(
-        f"将清空 {TRASH_DIR} 下的内容（files / info 等子目录会保留），确认继续？",
-        default=False,
-    ):
-        console.print("[yellow]已跳过回收站清理[/yellow]")
-        return
-    for cmd in _trash_cmds():
-        run(cmd)
+def steps() -> list[Step]:
+    existing = user_dirs_existing()
+    return [
+        Step(
+            "user_dirs", "用户目录", Category.USER_DATA, _user_dirs_cmds(),
+            available=bool(existing), reason="无可清理目录",
+            note="清空 " + "、".join(USER_DIR_NAMES) + " 的内容（保留文件夹）",
+        ),
+        Step(
+            "trash", "回收站", Category.USER_DATA, _trash_cmds(),
+            available=os.path.isdir(TRASH_DIR), reason="未找到回收站",
+            note="清空 ~/.local/share/Trash",
+        ),
+    ]
