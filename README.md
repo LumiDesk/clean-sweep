@@ -66,7 +66,7 @@ CleanSweep 把「该删的缓存」整理成一份清单，用 TUI（终端图�
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/Talyra42/clean-sweep.git
+git clone https://github.com/LumiDesk/clean-sweep.git
 cd clean-sweep
 
 # 2. 同步依赖
