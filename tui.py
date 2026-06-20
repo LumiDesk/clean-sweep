@@ -54,7 +54,7 @@ class CleanList(OptionList):
     """勾选列表：空格切换选中，回车请求执行，jk 移动。选中状态自存自渲染。"""
 
     BINDINGS = [
-        Binding("space", "toggle", "选择"),
+        Binding("space", "toggle_select", "选择"),
         Binding("enter", "execute", "执行"),
         Binding("j", "cursor_down", show=False),
         Binding("k", "cursor_up", show=False),
@@ -72,14 +72,14 @@ class CleanList(OptionList):
         }
         super().__init__(
             *(
-                Option(self._render(s), id=s.key, disabled=not s.available)
+                Option(self._render_row(s), id=s.key, disabled=not s.available)
                 for s in steps
             ),
             id="list",
         )
         self.border_title = "清理项"
 
-    def _render(self, step: Step) -> str:
+    def _render_row(self, step: Step) -> str:
         tag = _TAG[step.category]
         if not step.available:
             # 不可用：不显示勾选框，整行置灰，给出原因。
@@ -91,22 +91,23 @@ class CleanList(OptionList):
     def _toggle_index(self, index: int | None) -> None:
         if index is None:
             return
-        step = self._by_key.get(self.get_option_at_index(index).id)
+        key = self.get_option_at_index(index).id
+        step = self._by_key.get(key) if key is not None else None
         if step is None or not step.available:
             return
         if step.key in self.selected:
             self.selected.discard(step.key)
         else:
             self.selected.add(step.key)
-        self.replace_option_prompt_at_index(index, self._render(step))
+        self.replace_option_prompt_at_index(index, self._render_row(step))
 
     def set_selection(self, keys) -> None:
         self.selected = set(keys)
-        for index in range(self.option_count):
-            step = self._by_key[self.get_option_at_index(index).id]
-            self.replace_option_prompt_at_index(index, self._render(step))
+        # 选项按 self._steps 顺序创建，下标一一对应，直接遍历即可。
+        for index, step in enumerate(self._steps):
+            self.replace_option_prompt_at_index(index, self._render_row(step))
 
-    def action_toggle(self) -> None:
+    def action_toggle_select(self) -> None:
         self._toggle_index(self.highlighted)
 
     def action_execute(self) -> None:
