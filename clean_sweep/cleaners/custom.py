@@ -1,4 +1,4 @@
-"""自定义清理：用户在项目根目录的 custom.json 中列出要删除的目录/文件"""
+"""自定义清理：用户在 ~/.config/clean-sweep/custom.json 中列出要删除的目录/文件"""
 
 import json
 import os
@@ -6,13 +6,11 @@ import shlex
 
 from .spec import Category, Step
 
-# 项目根目录下的 custom.json（与 main.py 同级）
-CONFIG_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "custom.json",
-)
-
 HOME = os.path.expanduser("~")
+
+# 用户配置目录下的 custom.json（遵循 XDG，安装后仍可写）。
+_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config")
+CONFIG_PATH = os.path.join(_CONFIG_HOME, "clean-sweep", "custom.json")
 
 
 def _is_dangerous(path: str) -> bool:

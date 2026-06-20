@@ -4,36 +4,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`CleanSweep` 是一个一键清空各类开发缓存（以及部分用户目录、应用配置）的命令行工具，仅面向 Linux。Python 3.14，uv 管理依赖。第三方库：`rich`（执行阶段的终端输出）+ `textual`（勾选清理项的 TUI）。
+`CleanSweep` 是一个一键清空各类开发缓存（以及部分用户目录、应用配置）的命令行工具，仅面向 Linux。Python ≥3.10（开发用 3.14），uv 管理依赖。第三方库：`rich`（执行阶段的终端输出）+ `textual`（勾选清理项的 TUI）。
 
-唯一入口 `main.py`：拉起 TUI 让用户一次性勾选要清理的项，TUI 退出后回到普通终端按顺序执行被选中项。它在模块顶层直接执行，不要加 `if __name__ == "__main__"`。
+代码在 `clean_sweep/` 包内。入口是 `clean_sweep/cli.py` 的 `main()`：拉起 TUI 让用户一次性勾选要清理的项，TUI 退出后回到普通终端按顺序执行被选中项。`main()` 也是 pyproject `[project.scripts]` 注册的 `clean-sweep` 命令入口；仓库根目录的 `main.py` 只是 `from clean_sweep.cli import main; main()` 的薄壳，让 `uv run main.py` 仍等价于装好后的 `clean-sweep`。
 
 ## Commands
 
-- 运行：`uv run main.py`
+- 运行：`uv run main.py`（或装好后 `clean-sweep`）
 - 同步依赖：`uv sync`
 - 新增依赖：`uv add <pkg>`
+- 构建发布产物：`uv build`（生成 `dist/*.whl` 与 `*.tar.gz`）；上传 `uv publish`
 
 没有测试套件，没有 linter 配置。VSCode 会跑 Ruff 类型的诊断（PostToolUse 会回传 `ide_diagnostics`），别忽略警告。
 
 ## Architecture
 
 ```
-main.py              # 入口：跑 TUI 拿到选中的 key，退出后按顺序 run() 每条命令
-tui.py               # textual TUI：勾选列表 + 实时预览 + 一次性确认弹窗
-cleaners/
-├── _common.py       # 共享 console / run / has
-├── spec.py          # Category 枚举 + Step 数据类（清理项的统一描述模型）
-├── registry.py      # 汇总各模块 steps()，按 ORDER 固定顺序返回
-├── dev.py           # 开发工具缓存：docker, pnpm, npm, bun, go, rust, sdkman, gradle, maven
-├── system.py        # 系统级：dnf, apt, journal, ~/.cache, /var/cache, 缩略图, 崩溃报告, snap, flatpak
-├── user.py          # 用户数据目录：Documents/.../Videos + 回收站（含外部盘 .Trash-<uid>）
-├── logs.py          # 家目录下所有 .log 日志文件
-├── apps.py          # 应用配置：Claude (.claude 文件夹 + .claude.json)
-└── custom.py        # 自定义：读项目根目录 custom.json 的 paths 列表
+main.py                    # 根目录薄壳：import clean_sweep.cli.main 并调用
+clean_sweep/
+├── cli.py                 # 入口 main()：跑 TUI 拿到选中的 key，退出后按顺序 run() 每条命令
+├── tui.py                 # textual TUI：勾选列表 + 实时预览 + 一次性确认弹窗
+└── cleaners/
+    ├── _common.py         # 共享 console / run / has
+    ├── spec.py            # Category 枚举 + Step 数据类（清理项的统一描述模型）
+    ├── registry.py        # 汇总各模块 steps()，按 ORDER 固定顺序返回
+    ├── dev.py             # 开发工具缓存：docker, pnpm, npm, bun, go, rust, sdkman, gradle, maven
+    ├── system.py          # 系统级：dnf, apt, journal, ~/.cache, /var/cache, 缩略图, 崩溃报告, snap, flatpak
+    ├── user.py            # 用户数据目录：Documents/.../Videos + 回收站（含外部盘 .Trash-<uid>）
+    ├── logs.py            # 家目录下所有 .log 日志文件
+    ├── apps.py            # 应用配置：Claude (.claude 文件夹 + .claude.json)
+    └── custom.py          # 自定义：读 ~/.config/clean-sweep/custom.json 的 paths 列表
 ```
 
-数据流：`registry.all_steps()` 收齐所有 `Step` → `tui.CleanSweepApp` 渲染勾选列表（右侧预览 `Step.cmds`）→ 用户勾选 + 回车 → 一次性确认弹窗 → `app.run()` 返回选中的 key 列表 → `main.py` 对每个选中 `Step` 的 `cmds` 逐条 `run(...)`。
+数据流：`registry.all_steps()` 收齐所有 `Step` → `tui.CleanSweepApp` 渲染勾选列表（右侧预览 `Step.cmds`）→ 用户勾选 + 回车 → 一次性确认弹窗 → `app.run()` 返回选中的 key 列表 → `cli.main()` 对每个选中 `Step` 的 `cmds` 逐条 `run(...)`。
+
+包内模块一律用相对导入（`from .cleaners.registry import ...`、`from .spec import ...`）。
 
 **交互不再是逐项二次确认**：上下/jk 移动，空格勾选，`a` 全选 / `n` 全不选 / `c` 仅缓存，回车执行；确认弹窗是唯一一道闸门（回车确认，esc 取消）。
 
@@ -49,7 +54,7 @@ cleaners/
 
 ### 共用约定（来自 `_common.py`）
 
-- `run(cmd)`：所有 shell 操作都走它——它会先 `console.print` 出命令本身（青色），再 `subprocess.run(..., check=False)`。**不要绕开它直接调 `subprocess` / `os.system`**，否则用户看不到执行的是什么。执行只在 TUI 退出后的 `main.py` 里发生。
+- `run(cmd)`：所有 shell 操作都走它——它会先 `console.print` 出命令本身（青色），再 `subprocess.run(..., check=False)`。**不要绕开它直接调 `subprocess` / `os.system`**，否则用户看不到执行的是什么。执行只在 TUI 退出后的 `cli.main()` 里发生。
 - `has(name)`：检测可执行文件是否存在，用于 `steps()` 里算 `available`。工具/路径不存在的项在 TUI 里置灰、不可勾选，不报错退出；整体必须能跨环境跑通。
 - 路径里有用户输入或可能含特殊字符时用 `shlex.quote`（参考 `user.py` / `apps.py`）。`dev.py` 里硬编码的工具命令可以不用。
 

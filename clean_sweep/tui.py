@@ -16,7 +16,7 @@ from textual.screen import ModalScreen, Screen
 from textual.widgets import Button, Footer, Header, OptionList, Static
 from textual.widgets.option_list import Option
 
-from cleaners.spec import Category, Step
+from .cleaners.spec import Category, Step
 
 # 每类一个文字徽章（不用 emoji，终端渲染稳定）。
 _TAG = {
