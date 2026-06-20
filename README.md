@@ -12,7 +12,7 @@
 CleanSweep 把「该删的缓存」整理成一份清单，用 TUI（终端图形界面）让你**勾选 → 预览要执行的命令 → 一次性确认 → 执行**。每一项删什么都清清楚楚，所见即所删，不藏黑盒。
 
 <p align="center">
-  <img alt="CleanSweep 运行截图：左侧勾选清单，右侧实时命令预览" src="showcase.png" width="860">
+  <img alt="CleanSweep 运行截图：左侧勾选清单，右侧实时命令预览" src="https://raw.githubusercontent.com/LumiDesk/clean-sweep-tui/main/showcase.png" width="860">
 </p>
 
 ## ✨ 特性
