@@ -6,11 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `CleanSweep` 是一个一键清空各类开发缓存（以及部分用户目录、应用配置）的命令行工具，仅面向 Linux。Python ≥3.10（开发用 3.14），uv 管理依赖。第三方库：`rich`（执行阶段的终端输出）+ `textual`（勾选清理项的 TUI）。
 
-代码在 `clean_sweep/` 包内。入口是 `clean_sweep/cli.py` 的 `main()`：拉起 TUI 让用户一次性勾选要清理的项，TUI 退出后回到普通终端按顺序执行被选中项。`main()` 也是 pyproject `[project.scripts]` 注册的 `clean-sweep` 命令入口；仓库根目录的 `main.py` 只是 `from clean_sweep.cli import main; main()` 的薄壳，让 `uv run main.py` 仍等价于装好后的 `clean-sweep`。
+代码在 `clean_sweep_tui/` 包内。入口是 `clean_sweep_tui/cli.py` 的 `main()`：拉起 TUI 让用户一次性勾选要清理的项，TUI 退出后回到普通终端按顺序执行被选中项。`main()` 也是 pyproject `[project.scripts]` 注册的 `clean-sweep-tui` 命令入口；仓库根目录的 `main.py` 只是 `from clean_sweep_tui.cli import main; main()` 的薄壳，让 `uv run main.py` 仍等价于装好后的 `clean-sweep-tui`。PyPI 分发名也是 `clean-sweep-tui`。
 
 ## Commands
 
-- 运行：`uv run main.py`（或装好后 `clean-sweep`）
+- 运行：`uv run main.py`（或装好后 `clean-sweep-tui`）
 - 同步依赖：`uv sync`
 - 新增依赖：`uv add <pkg>`
 - 构建发布产物：`uv build`（生成 `dist/*.whl` 与 `*.tar.gz`）；上传 `uv publish`
@@ -20,8 +20,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Architecture
 
 ```
-main.py                    # 根目录薄壳：import clean_sweep.cli.main 并调用
-clean_sweep/
+main.py                    # 根目录薄壳：import clean_sweep_tui.cli.main 并调用
+clean_sweep_tui/
 ├── cli.py                 # 入口 main()：跑 TUI 拿到选中的 key，退出后按顺序 run() 每条命令
 ├── tui.py                 # textual TUI：勾选列表 + 实时预览 + 一次性确认弹窗
 └── cleaners/
@@ -33,7 +33,7 @@ clean_sweep/
     ├── user.py            # 用户数据目录：Documents/.../Videos + 回收站（含外部盘 .Trash-<uid>）
     ├── logs.py            # 家目录下所有 .log 日志文件
     ├── apps.py            # 应用配置：Claude (.claude 文件夹 + .claude.json)
-    └── custom.py          # 自定义：读 ~/.config/clean-sweep/custom.json 的 paths 列表
+    └── custom.py          # 自定义：读 ~/.config/clean-sweep-tui/custom.json 的 paths 列表
 ```
 
 数据流：`registry.all_steps()` 收齐所有 `Step` → `tui.CleanSweepApp` 渲染勾选列表（右侧预览 `Step.cmds`）→ 用户勾选 + 回车 → 一次性确认弹窗 → `app.run()` 返回选中的 key 列表 → `cli.main()` 对每个选中 `Step` 的 `cmds` 逐条 `run(...)`。

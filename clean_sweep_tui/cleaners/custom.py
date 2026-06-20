@@ -1,4 +1,4 @@
-"""自定义清理：用户在 ~/.config/clean-sweep/custom.json 中列出要删除的目录/文件"""
+"""自定义清理：用户在 ~/.config/clean-sweep-tui/custom.json 中列出要删除的目录/文件"""
 
 import json
 import os
@@ -10,7 +10,7 @@ HOME = os.path.expanduser("~")
 
 # 用户配置目录下的 custom.json（遵循 XDG，安装后仍可写）。
 _CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config")
-CONFIG_PATH = os.path.join(_CONFIG_HOME, "clean-sweep", "custom.json")
+CONFIG_PATH = os.path.join(_CONFIG_HOME, "clean-sweep-tui", "custom.json")
 
 
 def _is_dangerous(path: str) -> bool:

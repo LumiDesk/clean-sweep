@@ -1,6 +1,6 @@
 [project]
-name = "clean-sweep"
-version = "0.1.0"
+name = "clean-sweep-tui"
+version = "0.1.1"
 description = "一键清空各类开发缓存及部分用户目录、应用配置的 Linux 命令行小工具"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -21,15 +21,15 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/LumiDesk/clean-sweep"
-Repository = "https://github.com/LumiDesk/clean-sweep"
+Homepage = "https://github.com/LumiDesk/clean-sweep-tui"
+Repository = "https://github.com/LumiDesk/clean-sweep-tui"
 
 [project.scripts]
-clean-sweep = "clean_sweep.cli:main"
+clean-sweep-tui = "clean_sweep_tui.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["clean_sweep"]
+packages = ["clean_sweep_tui"]
