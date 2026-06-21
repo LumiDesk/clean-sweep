@@ -10,7 +10,7 @@
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.message import Message
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Button, Footer, Header, OptionList, Static
@@ -51,7 +51,11 @@ def _preview(step: Step) -> str:
 
 
 class CleanList(OptionList):
-    """勾选列表：空格切换选中，回车请求执行，jk 移动。选中状态自存自渲染。"""
+    """勾选列表：空格切换选中，回车请求执行，jk 移动。
+
+    选中状态由 MainScreen 统一持有（一个共享 set），多个 CleanList 实例共用同一个
+    set（通用清理项 / 应用插件各一个列表）；本类只负责渲染与切换自己那些行。
+    """
 
     BINDINGS = [
         Binding("space", "toggle_select", "选择"),
@@ -63,21 +67,21 @@ class CleanList(OptionList):
     class ExecuteRequest(Message):
         pass
 
-    def __init__(self, steps: list[Step]) -> None:
+    def __init__(
+        self, steps: list[Step], selected: set[str], list_id: str, title: str
+    ) -> None:
         self._steps = steps
         self._by_key = {s.key: s for s in steps}
-        # 默认勾选所有可用的缓存项；不可用 / 危险项默认不选。
-        self.selected: set[str] = {
-            s.key for s in steps if s.available and not s.destructive
-        }
+        # 共享选中集：只增删、不重新赋值，否则会与其它列表断开同步。
+        self.selected = selected
         super().__init__(
             *(
                 Option(self._render_row(s), id=s.key, disabled=not s.available)
                 for s in steps
             ),
-            id="list",
+            id=list_id,
         )
-        self.border_title = "清理项"
+        self.border_title = title
 
     def _render_row(self, step: Step) -> str:
         tag = _TAG[step.category]
@@ -101,9 +105,8 @@ class CleanList(OptionList):
             self.selected.add(step.key)
         self.replace_option_prompt_at_index(index, self._render_row(step))
 
-    def set_selection(self, keys) -> None:
-        self.selected = set(keys)
-        # 选项按 self._steps 顺序创建，下标一一对应，直接遍历即可。
+    def refresh_rows(self) -> None:
+        """按当前共享 selected 重绘所有行（供 MainScreen 的全选/全不选等调用）。"""
         for index, step in enumerate(self._steps):
             self.replace_option_prompt_at_index(index, self._render_row(step))
 
@@ -174,45 +177,67 @@ class MainScreen(Screen):
 
     def __init__(self, steps: list[Step]) -> None:
         super().__init__()
-        self.steps = steps
+        self.steps = steps  # 全量、执行顺序；执行时按它过滤选中项
+        self._by_key = {s.key: s for s in steps}
+        # 通用清理项与应用插件分区展示；选中集两区共享。
+        self._main = [s for s in steps if not s.plugin]
+        self._plugins = [s for s in steps if s.plugin]
+        # 默认勾选所有可用的缓存项；不可用 / 危险项默认不选。
+        self.selected: set[str] = {
+            s.key for s in steps if s.available and not s.destructive
+        }
 
     def compose(self) -> ComposeResult:
         yield Header()
         with Horizontal():
-            yield CleanList(self.steps)
+            with Vertical(id="lists"):
+                yield CleanList(self._main, self.selected, "list", "清理项")
+                if self._plugins:
+                    yield CleanList(
+                        self._plugins, self.selected, "plugin-list", "应用插件"
+                    )
             with VerticalScroll(id="preview-wrap"):
                 yield Static("", id="preview")
         yield Footer()
 
     def on_mount(self) -> None:
         self.query_one("#preview-wrap").border_title = "预览"
-        cl = self.query_one(CleanList)
-        cl.focus()
-        self._update_preview(cl.highlighted)
+        first = self.query_one("#list", CleanList)
+        first.focus()
+        if self._main:
+            self._show_preview(self._main[0])
 
-    def _update_preview(self, index: int | None) -> None:
-        if index is None:
-            return
-        self.query_one("#preview", Static).update(_preview(self.steps[index]))
+    def _show_preview(self, step: Step) -> None:
+        self.query_one("#preview", Static).update(_preview(step))
+
+    def _refresh_lists(self) -> None:
+        for cl in self.query(CleanList):
+            cl.refresh_rows()
 
     def on_option_list_option_highlighted(
         self, event: OptionList.OptionHighlighted
     ) -> None:
-        self._update_preview(event.option_index)
+        step = self._by_key.get(event.option_id)
+        if step is not None:
+            self._show_preview(step)
 
     def on_clean_list_execute_request(self, _: CleanList.ExecuteRequest) -> None:
         self.action_execute()
 
+    def _set_selection(self, keys) -> None:
+        # 原地改共享 set（不能重新赋值，否则与各 CleanList 断开同步），再重绘。
+        self.selected.clear()
+        self.selected.update(keys)
+        self._refresh_lists()
+
     def action_select_all(self) -> None:
-        self.query_one(CleanList).set_selection(
-            s.key for s in self.steps if s.available
-        )
+        self._set_selection(s.key for s in self.steps if s.available)
 
     def action_select_none(self) -> None:
-        self.query_one(CleanList).set_selection([])
+        self._set_selection([])
 
     def action_select_cache(self) -> None:
-        self.query_one(CleanList).set_selection(
+        self._set_selection(
             s.key for s in self.steps if s.available and not s.destructive
         )
 
@@ -220,8 +245,7 @@ class MainScreen(Screen):
         self.app.exit(None)
 
     def action_execute(self) -> None:
-        keys = self.query_one(CleanList).selected
-        chosen = [s for s in self.steps if s.key in keys]
+        chosen = [s for s in self.steps if s.key in self.selected]
         if not chosen:
             self.notify("未选择任何清理项", severity="warning")
             return
@@ -239,11 +263,22 @@ class CleanSweepApp(App[list[str]]):
     SUB_TITLE = "↑↓ 移动 · 空格选择 · 回车执行 · q 退出"
 
     CSS = """
+    #lists {
+        width: 1fr;
+        margin: 0 1 0 0;
+    }
     CleanList {
         width: 1fr;
         border: round $primary;
         padding: 0 1;
-        margin: 0 1 0 0;
+    }
+    #list {
+        height: 2fr;
+        margin: 0 0 1 0;
+    }
+    #plugin-list {
+        height: 1fr;
+        border: round $accent;
     }
     #preview-wrap {
         width: 1fr;

@@ -1,0 +1,11 @@
+{
+  "key": "siyuan",
+  "name": "思源笔记（配置 + 默认工作区）",
+  "category": "config",
+  "note": "删 ~/SiYuan 默认工作区 + ~/.config/siyuan + SiYuan-Electron 用户数据；笔记请确认放在别处",
+  "paths": [
+    "~/SiYuan",
+    "~/.config/siyuan",
+    "~/.config/SiYuan-Electron"
+  ]
+}

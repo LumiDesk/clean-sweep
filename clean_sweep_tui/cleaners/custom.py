@@ -4,6 +4,7 @@ import json
 import os
 import shlex
 
+from ._common import is_dangerous_path
 from .spec import Category, Step
 
 HOME = os.path.expanduser("~")
@@ -11,12 +12,6 @@ HOME = os.path.expanduser("~")
 # 用户配置目录下的 custom.json（遵循 XDG，安装后仍可写）。
 _CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config")
 CONFIG_PATH = os.path.join(_CONFIG_HOME, "clean-sweep-tui", "custom.json")
-
-
-def _is_dangerous(path: str) -> bool:
-    """挡掉会造成灾难性删除的路径：根目录、家目录本身。"""
-    norm = os.path.normpath(os.path.abspath(path))
-    return norm == os.sep or norm == os.path.normpath(HOME)
 
 
 def _load_paths() -> list[str] | None:
@@ -39,7 +34,7 @@ def custom_existing() -> list[str]:
     expanded = _load_paths()
     if not expanded:
         return []
-    return [p for p in expanded if os.path.exists(p) and not _is_dangerous(p)]
+    return [p for p in expanded if os.path.exists(p) and not is_dangerous_path(p)]
 
 
 def _custom_cmds() -> list[str]:

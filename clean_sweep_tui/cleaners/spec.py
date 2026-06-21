@@ -35,6 +35,9 @@ class Step:
     reason: str = ""  # 不可用时的原因（置灰显示）
     note: str = ""  # 一行简介
     needs_sudo: bool = False
+    # 针对某个具体应用的清理项（Claude、思源……），在 TUI 的「应用插件」区单独
+    # 展示，与通用清理项分开。与 category（安全分级）正交：插件也分缓存/配置等。
+    plugin: bool = False
 
     @property
     def destructive(self) -> bool:

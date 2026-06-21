@@ -1,0 +1,10 @@
+{
+  "key": "claude",
+  "name": "Claude",
+  "category": "config",
+  "note": "删除 ~/.claude 与 ~/.claude.json（配置/历史/项目记录）",
+  "paths": [
+    "~/.claude",
+    "~/.claude.json"
+  ]
+}
