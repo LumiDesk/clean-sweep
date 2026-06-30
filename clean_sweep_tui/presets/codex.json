@@ -1,0 +1,9 @@
+{
+  "key": "codex",
+  "name": "Codex",
+  "category": "config",
+  "note": "删除 ~/.codex（配置/认证缓存/会话/技能/日志/记忆）",
+  "paths": [
+    "~/.codex"
+  ]
+}

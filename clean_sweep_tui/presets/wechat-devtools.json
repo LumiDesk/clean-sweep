@@ -1,0 +1,10 @@
+{
+  "key": "wechat-devtools",
+  "name": "微信开发者工具",
+  "category": "config",
+  "note": "删除 ~/.config/wechat-devtools 与 ~/.cache/wechat-devtools（登录态/项目历史/模拟器数据/缓存）",
+  "paths": [
+    "~/.config/wechat-devtools",
+    "~/.cache/wechat-devtools"
+  ]
+}

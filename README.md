@@ -163,10 +163,12 @@ uv run main.py
 - `category`（可选，默认 `cache`）：`cache` 默认勾选、无标记；`user_data` / `config` / `system` / `custom` 会带 `!` 标记、默认不勾。决定默认勾选与危险提示，仅影响安全分级，不会加 `sudo`。
 - `note`（可选）：一行简介。
 
-内置规则现有两条，都是 `config` 类（默认**不勾**、带 `!`，需主动选中）：
+内置规则现有四条，都是 `config` 类（默认**不勾**、带 `!`，需主动选中）：
 
 - **Claude**：删除 `~/.claude` 与 `~/.claude.json`（配置 / 历史 / 项目记录）。
+- **Codex**：删除 `~/.codex`（配置 / 认证缓存 / 会话 / 技能 / 日志 / 记忆），保留 `codex` 命令本体。
 - **思源笔记**：删除整个 `~/SiYuan`（默认工作区）、`~/.config/siyuan`（思源配置）和 `~/.config/SiYuan-Electron`（Electron 用户数据）——即「除程序本体与真实工作区外的所有配置」。
+- **微信开发者工具**：删除 `~/.config/wechat-devtools` 与 `~/.cache/wechat-devtools`（登录态 / 项目历史 / 模拟器数据 / 缓存），保留 `/opt/apps/...` 等程序本体。
 
 > [!WARNING]
 > 思源这条会删掉**整个默认工作区 `~/SiYuan`**。如果你的笔记就放在那里，**不要勾选它**；笔记放在别处时这一项才安全。工作区路径不同的话，复制内置规则到用户预设目录、改 `paths` 即可（同 `key` 自动覆盖内置）。
@@ -179,7 +181,7 @@ uv run main.py
 
 ## 🤝 贡献
 
-欢迎提 Issue 和 PR。新增清理项时请注意把它归到正确的安全分级（缓存 / 用户数据 / 系统 / 配置 / 自定义），项目的开发约定见 [CLAUDE.md](CLAUDE.md)。
+欢迎提 Issue 和 PR。新增清理项时请注意把它归到正确的安全分级（缓存 / 用户数据 / 系统 / 配置 / 自定义），项目的开发约定见 [AGENTS.md](AGENTS.md)。
 
 ## 📄 License
 
